@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a single version of Python
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: Carpi tests
+name: Tests
 
 on:
   push:
@@ -29,4 +29,4 @@ jobs:
         cd backend ; poetry install
     - name: Test with pytest and coverage
       run: |
-        cd backend ; poetry run pytest --cov-report=html --cov=app 
+        cd backend ; poetry run pytest --cov=app 
