@@ -26,7 +26,7 @@ jobs:
         poetry-version: 1.1.2
     - name: Install dependencies
       run: |
-        poetry install
+        cd backend ; poetry install
     - name: Test with pytest and coverage
       run: |
         cd backend ; poetry run pytest --cov-report=html --cov=app 
