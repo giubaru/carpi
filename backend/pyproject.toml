@@ -2,7 +2,7 @@
 name = "backend"
 version = "0.1.0"
 description = ""
-authors = ["gmarinella9 <giuliano.b.marinella@gmail.com>"]
+authors = ["giubaru <giulianobmarinella@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
