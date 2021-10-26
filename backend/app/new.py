@@ -70,6 +70,11 @@ class Mutation:
       session.commit()
       data = models.TransactionReadGraph.from_pydantic(trans1)
 
+      account = session.get(models.Account, account_id)
+      account.total += amount
+      session.add(account)
+      session.commit()
+
     return data
 
   @strawberry.mutation
@@ -83,7 +88,7 @@ class Mutation:
       session.commit()
       session.refresh(user)
 
-    return models.UserReadGraph.from_pydantic(user)
+    return models.UserReadGraph(**user.dict())
 
   @strawberry.mutation
   def create_account(name: str, account_type: str, user_id: int, child: Optional[bool] = False, parent_account: Optional[int] = 0) -> models.AccountReadGraph:
@@ -115,7 +120,7 @@ class Mutation:
         session.commit()
         session.refresh(account)
 
-    return models.AccountReadGraph.from_pydantic(account)
+    return models.AccountReadGraph(**account.dict())
 
 def get_transactions() -> List[models.TransactionReadGraph]:
   with db.Session(db.engine) as session:
@@ -179,11 +184,9 @@ def get_accounts_by_user_id(user_id: int) -> List[models.AccountReadGraph]:
 
 @strawberry.type
 class Query:
-  transactions: List[models.TransactionReadGraph] = strawberry.field(resolver=get_transactions_by_user_id)
   user: models.UserReadGraph = strawberry.field(resolver=get_user)
-  accounts: List[models.AccountReadGraph] = strawberry.field(resolver=get_accounts_by_user_id)
-
-  full_name: TestModelGraph = strawberry.field(resolver=lambda: TestModelGraph(name="John", age=30))
+  # transactions: List[models.TransactionReadGraph] = strawberry.field(resolver=get_transactions_by_user_id)
+  # accounts: List[models.AccountReadGraph] = strawberry.field(resolver=get_accounts_by_user_id)
 
 graphql_app = GraphQL(strawberry.Schema(mutation=Mutation, query=Query))
 app = FastAPI()
