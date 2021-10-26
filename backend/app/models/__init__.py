@@ -1,4 +1,4 @@
-from .transaction import (
+from .new_transaction import (
     Transaction,
     TransactionCreate,
     TransactionRead
@@ -13,9 +13,13 @@ from .user import (
     UserCreate,
     UserRead
 )
+from .account import (
+    Account,
+    AccountCreate,
+    AccountRead
+)
 from .relations import (
-    TransactionReadWithUser,
-    UserReadWithTransactions,
     UserReadGraph,
-    TransactionReadGraph
+    TransactionReadGraph,
+    AccountReadGraph
 )
