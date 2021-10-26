@@ -53,6 +53,15 @@ class Ingresos(Account):
   category: str = "Ganancia"
 
 
+def update_total(account_id: int, amount: float):
+  with db.Session(db.engine) as session:
+    account = session.get(models.Account, account_id)
+    account.total += amount
+    session.add(account)
+    session.commit()
+    if account.parent_id:
+      update_total(account.parent_id, amount)
+
 @strawberry.type
 class Mutation:
   @strawberry.mutation
@@ -70,11 +79,8 @@ class Mutation:
       session.commit()
       data = models.TransactionReadGraph.from_pydantic(trans1)
 
-      account = session.get(models.Account, account_id)
-      account.total += amount
-      session.add(account)
-      session.commit()
-
+      update_total(account_id, amount)
+      
     return data
 
   @strawberry.mutation
