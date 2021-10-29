@@ -33,6 +33,6 @@ class TransactionCreate(TransactionBase):
 class TransactionRead(TransactionBase):
   id: int
 
-@strawberry.experimental.pydantic.type(model=TransactionRead, all_fields=True)
+@strawberry.experimental.pydantic.type(model=TransactionRead, fields=["user_id", "account_id", "movement", "account_id", "amount", "category", "id", "user", "accounts"])
 class TransactionReadGraph:
   pass

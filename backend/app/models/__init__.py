@@ -3,11 +3,6 @@ from .new_transaction import (
     TransactionCreate,
     TransactionRead
 )
-from .action_type import (
-    ActionType,
-    ActionTypeCreate,
-    ActionTypeRead
-)
 from .user import (
     User,
     UserCreate,

@@ -1,8 +1,9 @@
+import strawberry
+
 from typing import Optional, TYPE_CHECKING, List
 
 from sqlmodel import SQLModel, Field, Column, DateTime, Relationship
 from datetime import datetime
-import strawberry
 
 
 if TYPE_CHECKING:
@@ -38,6 +39,7 @@ class AccountCreate(AccountBase):
 class AccountRead(AccountBase):
   id: int
 
-@strawberry.experimental.pydantic.type(model=AccountRead, all_fields=True)
+@strawberry.experimental.pydantic.type(model=AccountRead, fields=["id","user","parent_id","children","transactions","user_id","total","name","account_type"])
 class AccountReadGraph:
   pass
+

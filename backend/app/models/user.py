@@ -6,7 +6,6 @@ if TYPE_CHECKING:
   from .new_transaction import Transaction
   from .account import Account
 
-
 class UserBase(SQLModel):
   name: str
   email: str
