@@ -50,6 +50,7 @@ def test_query(client: TestClient):
   result = client.post('/graphql', json={'query': query})
   
   assert result.json().get('data').get('user').get('name') == 'Giuliano' 
+  assert result.json().get('data').get('user').get('accounts')[0].get('name') == 'Ingresos'
 # def test_create_user(client: TestClient):
 #     response = client.post(
 #         "/users/", json={"name": "Test", "email": "test.user@test.com", "username": "testuser"}
