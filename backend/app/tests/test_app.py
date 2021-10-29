@@ -1,9 +1,8 @@
 import pytest
 
-from datetime import datetime
 
 from fastapi.testclient import TestClient
-from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel import Session, SQLModel, create_engine, select
 from sqlmodel.pool import StaticPool
 
 from ..main import app, db, models
@@ -13,12 +12,10 @@ from logging import Logger
 logger = Logger(__name__)
 
 
-
-
 @pytest.fixture(name="session")
 def session_fixture():
   engine = create_engine(
-      "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+      "sqlite:///database-tests.db", connect_args={"check_same_thread": False}, poolclass=StaticPool
   )
   SQLModel.metadata.create_all(engine)
   with Session(engine) as session:
@@ -31,119 +28,53 @@ def client_fixture(session: Session):
       return session
 
   app.dependency_overrides[db.get_session] = get_session_override
+  db.Session = session
   client = TestClient(app)
   yield client
   app.dependency_overrides.clear()
 
-def test_query(client: TestClient):
-  query = '''
-  query {
-    user(userId: 2) {
-      name
-      accounts {
+def test_create_user(client: TestClient):
+  mutation = '''
+    mutation {
+      createUser(email: "testuser@test.com", name: "TestUser", username: "testuser"){
         name
+        username
       }
+    }
+  '''
+  
+  result = client.post('/graphql', json={'query': mutation})
+
+  assert result.json() == {'data': {'createUser': {'name': 'TestUser', 'username': 'testuser'}}}
+
+def test_create_user_incomplete(client: TestClient):
+  mutation = '''
+    mutation {
+      createUser(email: "testuser@test.com", name: "TestUser"){
+        name
+        username
+      }
+    }
+  '''
+  
+  result = client.post('/graphql', json={'query': mutation})
+
+  assert result.json() == {'data': None, 'errors': [{'locations': [{'column': 7, 'line': 3}], 'message': "Field 'createUser' argument 'username' of type 'String!' is required, but it was not provided.", 'path': None}]}
+
+def test_get_user(client: TestClient, session: Session):
+  query = '''
+  query GetUser($userId: Int!) {
+    user(userId: $userId) {
+      id
+      name
+      email
+      username
     }
   }
   '''
+
+  user: models.User = session.exec(select(models.User).where(models.User.username == "testuser")).first()
   
-  result = client.post('/graphql', json={'query': query})
+  result = client.post('/graphql', json={'query': query, "variables": {"userId": user.id}})
   
-  assert result.json().get('data').get('user').get('name') == 'Giuliano' 
-  assert result.json().get('data').get('user').get('accounts')[0].get('name') == 'Ingresos'
-# def test_create_user(client: TestClient):
-#     response = client.post(
-#         "/users/", json={"name": "Test", "email": "test.user@test.com", "username": "testuser"}
-#     )
-#     data = response.json()
-    
-#     assert response.status_code == 200
-#     assert data["name"] == "Test"
-#     assert data["email"] == "test.user@test.com"
-#     assert data["username"] == "testuser"
-#     assert data["id"] is not None
-
-# def test_create_user_incomplete(client: TestClient):
-#     response = client.post("/users/", json={"name": "Test"})
-#     assert response.status_code == 422
-
-# def test_create_transaction(session: Session, client: TestClient):
-#     action1 = models.ActionType(name="Income", code="I", description="")
-#     user = models.User(**{"name": "Test", "email": "test.user@test.com", "username": "testuser"})
-#     session.add_all([action1, user])
-#     session.commit()
-
-#     response = client.post(
-#         "/transactions/", json={
-#             "category_id": 1,
-#             "currency_id": 0,
-#             "amount": 100,
-#             "description": "Test 1",
-#             "date": "2021-09-05T06:56:04.158Z",
-#             "user_id": 1,
-#             "action_type_id": 1
-#         }
-#     )
-#     data = response.json()
-#     print(data)
-#     assert response.status_code == 200
-#     assert data["amount"] == 100
-#     assert data["description"] == "Test 1"
-#     assert data["id"] is not None
-#     assert data["user_id"] is not None
-#     assert data["category_id"] is not None
-#     assert data["action_type_id"] is not None
-
-# def test_read_user_transactions(session: Session, client: TestClient):
-#     user = models.User(name="Test 2", email="test@test.com", username="test")
-#     session.add(user)
-#     session.commit()
-
-#     trans_1 = models.Transaction(**{
-#             "category_id": 1,
-#             "currency_id": 0,
-#             "amount": 100,
-#             "description": "Test 1",
-#             "date": datetime.now(),
-#             "user_id": 1,
-#             "action_type_id": 1
-#         })
-    
-#     trans_2 = models.Transaction(**{
-#             "category_id": 1,
-#             "currency_id": 0,
-#             "amount": 100,
-#             "description": "Test 2",
-#             "date": datetime.now(),
-#             "user_id": 1,
-#             "action_type_id": 1
-#         })
-
-#     trans_3 = models.Transaction(**{
-#             "category_id": 1,
-#             "currency_id": 0,
-#             "amount": 100,
-#             "description": "Test 1",
-#             "date": datetime.now(),
-#             "user_id": 0,
-#             "action_type_id": 1
-#         })
-
-#     session.add(trans_1)
-#     session.add(trans_2)
-#     session.add(trans_3)
-#     session.commit()
-
-#     response = client.get(
-#         "/users/1"
-#     )
-#     data = response.json()
-    
-#     assert response.status_code == 200
-#     assert data["id"] == 1
-#     assert data["username"] == "test"
-#     assert len(data["transactions"]) == 2
-#     assert data["transactions"][0]["description"] == "Test 1"
-#     assert data["transactions"][0]["amount"] == 100.0
-
-    
+  assert result.json() == {"data": {"user": {"id": 6, "name": "TestUser", "email": "testuser@test.com", "username": "testuser" }}}

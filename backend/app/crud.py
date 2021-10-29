@@ -6,7 +6,7 @@ from .models.account import Account, AccountRead
 
 
 def get_transactions() -> List[models.TransactionRead]:
-  with db.Session(db.engine) as session:
+  with db.get_session() as session:
     transactions = session.exec(select(models.Transaction)).all()
     return transactions
 

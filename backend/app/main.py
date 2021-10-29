@@ -105,3 +105,7 @@ app.add_route("/graphql", graphql_app)
 @app.on_event("startup")
 def on_startup():
     db.create_db_and_tables()
+
+@app.get("/transactions")
+def get_transactions():
+  return crud.get_transactions()
