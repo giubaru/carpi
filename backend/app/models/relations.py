@@ -1,40 +1,36 @@
-from pydantic.fields import Field
-from sqlalchemy.util.langhelpers import safe_reraise
 import strawberry
-from typing import TYPE_CHECKING, Optional, List
 
+from typing import Optional, List
+
+from strawberry.field import field
 
 from .new_transaction import TransactionRead
 from .user import UserRead
-from .account import AccountRead, Account
-from .. import db
-from sqlmodel import select
+from .account import AccountRead
+from .. import db, crud
 
-from app.models import account
-
-@strawberry.experimental.pydantic.type(model=AccountRead, all_fields=True)
+@strawberry.experimental.pydantic.type(model=AccountRead, fields=["id","user","parent_id","children","transactions","user_id","total","name","account_type"])
 class AccountReadGraph:
-  
-  children: List[strawberry.LazyType["AccountReadGraph", __module__]] = None
+  children: List[strawberry.LazyType["AccountReadGraph", __module__]] = field(default_factory=list)
   parent_id: Optional[int] = None
-  transactions: List[strawberry.LazyType["TransactionReadGraph", __module__]] = None
+  transactions: List[strawberry.LazyType["TransactionReadGraph", __module__]] = field(default_factory=list)
 
-@strawberry.experimental.pydantic.type(model=TransactionRead, all_fields=True)
+@strawberry.experimental.pydantic.type(model=TransactionRead, fields=["user_id", "account_id", "movement", "account_id", "amount", "category", "id", "user", "accounts"])
 class TransactionReadGraph:
-  # account: "AccountReadGraph" = None
   pass
 
-@strawberry.experimental.pydantic.type(model=UserRead, fields=['id', 'name', 'email', 'transactions', 'username', "accounts"])
+@strawberry.experimental.pydantic.type(model=UserRead, fields=["id", "name", "email", "username", "transactions", "accounts"])
 class UserReadGraph:
   # accounts: List["AccountReadGraph"] = None
   # transactions: List["TransactionReadGraph"] = None
   @strawberry.field
   def accounts(self, account_id: Optional[int] = None) -> List[AccountReadGraph]:
-    with db.Session(db.engine) as session:
+    with db.Session(db.engine) as session: # Using session to avoid Parent Lazy bounce
+      
       if account_id:
-        results = session.exec(select(Account).where(Account.id == account_id)).all()
+        results = crud.get_accounts(session, account_id=account_id, user_id=self.id)
       else:
-        results = session.exec(select(Account).where(Account.user_id == self.id)).all()
+        results = crud.get_accounts(session, user_id=self.id)
 
       accounts = [AccountReadGraph.from_pydantic(account) for account in results]
       return accounts
