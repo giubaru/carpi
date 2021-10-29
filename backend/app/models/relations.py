@@ -19,7 +19,7 @@ class AccountReadGraph:
 class TransactionReadGraph:
   pass
 
-@strawberry.experimental.pydantic.type(model=UserRead, fields=["id", "name", "email", "username", "transactions", "accounts"])
+@strawberry.experimental.pydantic.type(model=UserRead, fields=["id", "name", "email", "username", "transactions"])
 class UserReadGraph:
   # accounts: List["AccountReadGraph"] = None
   # transactions: List["TransactionReadGraph"] = None
@@ -32,5 +32,10 @@ class UserReadGraph:
       else:
         results = crud.get_accounts(session, user_id=self.id)
 
-      accounts = [AccountReadGraph.from_pydantic(account) for account in results]
+      accounts = []
+      for account in results:
+        a = AccountReadGraph(**account.dict())
+        a.transactions = account.transactions
+        accounts.append(a)
+      # accounts = [AccountReadGraph(**account.dict()) for account in results]
       return accounts
