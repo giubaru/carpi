@@ -30,3 +30,9 @@ clean-win:
 clean:
 	rm $(DEV_DATABASE)
 	rm -rf carpi\__pycache__
+
+docker-build:
+	docker build -t carpi .
+
+docker-run:
+	docker run -p 5000:80 carpi

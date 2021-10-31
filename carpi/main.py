@@ -7,7 +7,7 @@ from strawberry.asgi import GraphQL
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import db, models, crud
+from carpi import db, models, crud
 
 @strawberry.type
 class CreateUserSuccess:
