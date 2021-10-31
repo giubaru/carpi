@@ -45,3 +45,20 @@ $ (carpi) make tests
 ---> tests\test_app.py .....
 ---> ========== 5 passed in 1.70s ==========
 ```
+
+## Using Docker
+```console
+$ poetry shell
+$ (carpi) make docker-build
+
+---> docker build -t carpi .
+---> [+] Building 29.4s (15/15) FINISHED
+
+$ (carpi) make docker-run
+
+---> docker run -p 5000:80 carpi
+---> INFO:     Started server process [1]
+---> INFO:     Waiting for application startup.
+---> INFO:     Application startup complete.
+---> INFO:     Uvicorn running on http://127.0.0.1:80 (Press CTRL+C to quit)
+```
