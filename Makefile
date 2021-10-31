@@ -16,9 +16,6 @@ test:
 coverage:
 	coverage run --source=carpi -m pytest tests
 	coverage xml
-	del $(TEST_DATABASE)
-	rmdir /s /q "tests\__pycache__"
-	rmdir /s /q ".pytest_cache"
 
 run:
 	uvicorn carpi.main:app
