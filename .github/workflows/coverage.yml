@@ -1,0 +1,32 @@
+name: Coverage
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Python Poetry Action
+        uses: abatilo/actions-poetry@v2.1.0
+        with:
+          poetry-version: 1.1.2
+      - name: Install dependencies
+        run: |
+          poetry install
+      - name: Run tests and collect coverage
+        run: |
+          poetry run coverage
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2
+        with:
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
