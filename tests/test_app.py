@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine, select
 from sqlmodel.pool import StaticPool
 
-from ..main import app, db, models
+from carpi.main import app, db, models
 from .consts import Mutations, Queries
 from logging import Logger
 
