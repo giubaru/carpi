@@ -10,6 +10,24 @@ from fastapi.middleware.cors import CORSMiddleware
 from . import db, models, crud
 
 @strawberry.type
+class CreateUserSuccess:
+  user_id: int
+
+@strawberry.type
+class UsernameAlreadyExistsError:
+  username: str
+  alternative_username: str
+
+@strawberry.type
+class EmailAlreadyInUseError:
+  email: str
+
+Response = strawberry.union(
+  "CreateUserResponse",
+  [CreateUserSuccess, UsernameAlreadyExistsError, EmailAlreadyInUseError]
+)
+
+@strawberry.type
 class Mutation:
   @strawberry.mutation
   def add_income(self, amount: float, user_id: int, account_id: int) -> models.TransactionReadGraph:
@@ -31,8 +49,22 @@ class Mutation:
     return data
 
   @strawberry.mutation
-  def create_user(name: str, email: str, username: str) -> models.UserReadGraph:
+  def create_user(name: str, email: str, username: str) -> Response:
     with db.Session(db.engine) as session:
+
+      # Check if user exists
+      user_username = crud.get_user_by_username(username)
+      user_email = crud.get_user_by_email(email)
+
+      if user_username:
+        return UsernameAlreadyExistsError(
+          username=user_username.username,
+          alternative_username="new_username_alternative"
+        )
+
+      if user_email:
+        return EmailAlreadyInUseError(email=user_email.email)
+
       user = models.User(
         name=name,
         username=username,
@@ -40,8 +72,9 @@ class Mutation:
       session.add(user)
       session.commit()
       session.refresh(user)
+    
+    return CreateUserSuccess(message="User created successfully", user_id=user.id)
 
-    return models.UserReadGraph(**user.dict())
 
   @strawberry.mutation
   def create_account(name: str, account_type: str, user_id: int, child: Optional[bool] = False, parent_account: Optional[int] = 0) -> models.AccountReadGraph:
@@ -109,3 +142,7 @@ def on_startup():
 @app.get("/transactions")
 def get_transactions():
   return crud.get_transactions()
+
+
+
+

@@ -28,6 +28,16 @@ def get_user(user_id: int) -> models.UserRead:
     user = session.get(models.User, user_id)
     return user
 
+def get_user_by_username(username: str) -> models.UserRead:
+  with db.Session(db.engine) as session:
+    user = session.exec(select(models.User).where(models.User.username == username)).first()
+    return user
+
+def get_user_by_email(email: str) -> models.UserRead:
+  with db.Session(db.engine) as session:
+    user = session.exec(select(models.User).where(models.User.email == email)).first()
+    return user
+
 def get_accounts_by_user_id(user_id: int) -> List[models.AccountRead]:
   with db.Session(db.engine) as session:
     accounts = session.exec(select(models.Account).where(models.Account.user_id == user_id)).all()
