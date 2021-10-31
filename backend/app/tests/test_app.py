@@ -1,6 +1,5 @@
 import pytest
 
-
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine, select
 from sqlmodel.pool import StaticPool
@@ -15,23 +14,19 @@ logger = Logger(__name__)
 @pytest.fixture(name="session")
 def session_fixture():
   engine = create_engine(
-      "sqlite:///database-tests.db", connect_args={"check_same_thread": False}, poolclass=StaticPool
+      "sqlite:///database-test.db", connect_args={"check_same_thread": False}, poolclass=StaticPool
   )
   SQLModel.metadata.create_all(engine)
+  db.engine = engine
   with Session(engine) as session:
     yield session
 
 
 @pytest.fixture(name="client")
 def client_fixture(session: Session):
-  def get_session_override():
-      return session
-
-  app.dependency_overrides[db.get_session] = get_session_override
-  db.Session = session
   client = TestClient(app)
   yield client
-  app.dependency_overrides.clear()
+  # remove db to avoid persistent data
 
 def test_create_user(client: TestClient):
   mutation = '''
@@ -77,4 +72,4 @@ def test_get_user(client: TestClient, session: Session):
   
   result = client.post('/graphql', json={'query': query, "variables": {"userId": user.id}})
   
-  assert result.json() == {"data": {"user": {"id": 6, "name": "TestUser", "email": "testuser@test.com", "username": "testuser" }}}
+  assert result.json() == {"data": {"user": {"id": user.id, "name": "TestUser", "email": "testuser@test.com", "username": "testuser" }}}
