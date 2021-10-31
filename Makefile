@@ -13,6 +13,10 @@ test:
 	rm -rf "tests\__pycache__"
 	rm -rf ".pytest_cache"
 
+coverage:
+	coverage run --source=carpi -m pytest tests
+	coverage xml
+
 run:
 	uvicorn carpi.main:app
 

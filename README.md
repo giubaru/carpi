@@ -1,8 +1,13 @@
 # Carpi
 <p align="center">
   <a href="https://github.com/giubaru/carpi/actions/workflows/test-and-coverage.yml?query=event%3Apush+branch%3Amain" target="_blank">
-      <img src="https://github.com/giubaru/carpi/actions/workflows/test-and-coverage.yml/badge.svg?event=push&branch=main" alt="Tests">
+      <img src="https://github.com/giubaru/carpi/actions/workflows/test.yml/badge.svg?event=push&branch=main" alt="Tests">
   </a>
+  
+  <a href="https://codecov.io/gh/giubaru/carpi">
+    <img src="https://codecov.io/gh/giubaru/carpi/branch/main/graph/badge.svg?token=EOP3T1YDE7"/>
+  </a>
+    
 </p>
 
 ## Requirements
