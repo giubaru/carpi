@@ -36,6 +36,7 @@ class UserReadGraph:
       for account in results:
         a = AccountReadGraph(**account.dict())
         a.transactions = account.transactions
+        a.children = account.children
         accounts.append(a)
       # accounts = [AccountReadGraph(**account.dict()) for account in results]
       return accounts
