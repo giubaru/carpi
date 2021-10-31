@@ -78,3 +78,57 @@ def test_get_user(client: TestClient, session: Session):
   result = client.post('/graphql', json={'query': Queries.GET_USER.value, "variables": {"userId": user.id}})
   
   assert result.json() == {"data": {"user": {"id": user.id, "name": "Test", "email": "testuser@test.com", "username": "testuser" }}}
+
+def test_create_account(client: TestClient, session: Session):
+  '''This test creates an account using the mutation and then checks if the account was created'''
+
+  user: models.User = session.exec(select(models.User).where(models.User.username == "testuser")).first()
+
+  result = client.post('/graphql', json={
+    'query': Mutations.CREATE_ACCOUNT.value, 
+    'variables': {"accountType": "I", "name": "Ingresos", "userId": user.id}}
+  )
+  
+  account_id = result.json().get("data").get("createAccount").get("accountId")
+  account: models.Account = session.get(models.Account, account_id)
+  
+  assert account.user_id == user.id
+  assert account.name == "Ingresos"
+  assert account.account_type == "I"
+
+def test_add_child_account(client: TestClient, session: Session):
+  '''This test creates an account and then adds a child account to it'''
+
+  user: models.User = session.exec(select(models.User).where(models.User.username == "testuser")).first()
+
+  result = client.post('/graphql', json={
+    'query': Mutations.CREATE_CHILD_ACCOUNT.value, 
+    'variables': {"accountType": "I", "name": "Salarios", "userId": user.id, "parentAccount": 1}}
+  )
+
+  account_id = result.json().get("data").get("createAccount").get("accountId")
+  account: models.Account = session.get(models.Account, account_id)
+  
+  assert account.user_id == user.id
+  assert account.name == "Salarios"
+  assert account.account_type == "I"
+  assert account.parents[0].id == 1
+
+def test_add_new_income(client: TestClient, session: Session):
+  '''This test adds a new income to an existent account'''
+
+  user: models.User = session.exec(select(models.User).where(models.User.username == "testuser")).first()
+  
+  result = client.post('/graphql', json={
+    'query': Mutations.CREATE_TRANSACTION.value, 
+    'variables': {"accountId": 2, "amount": 100, "userId": 1}
+  })
+
+  account: models.Account = session.get(models.Account, 2)
+
+  income = result.json().get("data").get("addIncome").get("id")
+  
+  assert account.total == 100
+  # assert income.amount == 100
+  # assert income.date == "2020-01-01"
+  # assert income.description == "Salario"

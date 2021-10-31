@@ -2,8 +2,8 @@ TEST_DATABASE := database-test.db
 DEV_DATABASE  := database-dev.db
 
 test-win:
+	del /q $(TEST_DATABASE)
 	pytest tests
-	del $(TEST_DATABASE)
 	rmdir /s /q "tests\__pycache__"
 	rmdir /s /q ".pytest_cache"
 
@@ -30,6 +30,10 @@ clean-win:
 clean:
 	rm $(DEV_DATABASE)
 	rm -rf carpi\__pycache__
+
+clear:
+	del /q $(DEV_DATABASE)
+	del /q $(TEST_DATABASE)
 
 docker-build:
 	docker build -t carpi .

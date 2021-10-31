@@ -27,6 +27,11 @@ Response = strawberry.union(
   [CreateUserSuccess, UsernameAlreadyExistsError, EmailAlreadyInUseError]
 )
 
+
+@strawberry.type
+class CreateAccountSuccess:
+  account_id: int
+
 @strawberry.type
 class Mutation:
   @strawberry.mutation
@@ -77,36 +82,30 @@ class Mutation:
 
 
   @strawberry.mutation
-  def create_account(name: str, account_type: str, user_id: int, child: Optional[bool] = False, parent_account: Optional[int] = 0) -> models.AccountReadGraph:
+  def create_account(name: str, account_type: str, user_id: int, parent_account: Optional[int] = None) -> CreateAccountSuccess:
     with db.Session(db.engine) as session:
-
-      if child:
-        account = models.Account(
-          name=name,
-          account_type=account_type,
-          user_id=user_id,
-          parent_id=parent_account)
-
-        session.add(account)
-        session.commit()
-        session.refresh(account)
-
-        parent = session.get(models.Account, parent_account)
-        parent.children.append(account.id)
-        session.add(parent)
-        session.commit()
-        session.refresh(parent)
-      else:
-        account = models.Account(
+      account = models.Account(
           name=name,
           account_type=account_type,
           user_id=user_id)
 
-        session.add(account)
-        session.commit()
-        session.refresh(account)
+      session.add(account)
+      
 
-    return models.AccountReadGraph(**account.dict())
+      if parent_account:
+        parent = session.get(models.Account, parent_account)
+        parent.children.append(account)
+        session.add(parent)
+        # session.refresh(parent)
+
+        # account.parents.append(parent)        
+        # session.add(account)
+        # session.commit()
+        # session.refresh(account)
+      
+      session.commit()
+      session.refresh(account)
+    return CreateAccountSuccess(account_id=account.id)
 
 
 def get_user_graphql(user_id: int) -> models.UserReadGraph:

@@ -9,10 +9,9 @@ from .user import UserRead
 from .account import AccountRead
 from .. import db, crud
 
-@strawberry.experimental.pydantic.type(model=AccountRead, fields=["id","user","parent_id","children","transactions","user_id","total","name","account_type"])
+@strawberry.experimental.pydantic.type(model=AccountRead, fields=["id","children","transactions","user_id","total","name","account_type"])
 class AccountReadGraph:
   children: List[strawberry.LazyType["AccountReadGraph", __module__]] = field(default_factory=list)
-  parent_id: Optional[int] = None
   transactions: List[strawberry.LazyType["TransactionReadGraph", __module__]] = field(default_factory=list)
 
 @strawberry.experimental.pydantic.type(model=TransactionRead, fields=["user_id", "account_id", "movement", "account_id", "amount", "category", "id", "user", "accounts"])
@@ -26,7 +25,14 @@ class UserReadGraph:
   @strawberry.field
   def accounts(self, account_id: Optional[int] = None) -> List[AccountReadGraph]:
     with db.Session(db.engine) as session: # Using session to avoid Parent Lazy bounce
-      
+      childrens = []
+      def get_children(children, childrens):
+        if len(children) == 0:
+          return childrens
+        for child in children:
+          childrens.append(child)
+          get_children(child.children, childrens)
+
       if account_id:
         results = crud.get_accounts(session, account_id=account_id, user_id=self.id)
       else:
@@ -37,6 +43,7 @@ class UserReadGraph:
         a = AccountReadGraph(**account.dict())
         a.transactions = account.transactions
         a.children = account.children
+        
         accounts.append(a)
-      # accounts = [AccountReadGraph(**account.dict()) for account in results]
+
       return accounts

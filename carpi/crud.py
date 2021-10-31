@@ -1,6 +1,7 @@
 from typing import List, Optional
 from sqlmodel import select
 from sqlmodel.orm.session import Session
+from sqlalchemy.orm import lazyload
 from . import db, models
 from .models.account import Account, AccountRead
 
@@ -40,7 +41,7 @@ def get_user_by_email(email: str) -> models.UserRead:
 
 def get_accounts_by_user_id(user_id: int) -> List[models.AccountRead]:
   with db.Session(db.engine) as session:
-    accounts = session.exec(select(models.Account).where(models.Account.user_id == user_id)).all()
+    accounts = session.exec(select(models.Account).options(lazyload(Account.children)).where(models.Account.user_id == user_id)).all()
     return accounts
 
 def update_total(account_id: int, amount: float):
@@ -49,11 +50,12 @@ def update_total(account_id: int, amount: float):
     account.total += amount
     session.add(account)
     session.commit()
-    if account.parent_id:
-      update_total(account.parent_id, amount)
+    
+    if len(account.parents) > 0:
+      update_total(account.parents[0].id, amount)
 
 def get_accounts(session: Session, account_id: Optional[int] = None, user_id: Optional[int] = None) -> List[AccountRead]:
-  statement = select(Account)
+  statement = select(Account).options(lazyload(Account.children))
 
   if account_id:
     statement = statement.where(Account.user_id == user_id, Account.id == account_id)

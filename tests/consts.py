@@ -36,6 +36,32 @@ class Mutations(Enum):
   }
   '''
 
+  CREATE_ACCOUNT = '''\
+    mutation CreateAccount($accountType: String!, $name: String!, $userId: Int!) {
+      __typename
+      createAccount(accountType: $accountType, name: $name, userId: $userId) {
+        accountId
+      }
+    }
+  '''
+
+  CREATE_CHILD_ACCOUNT = '''\
+    mutation CreateAccount($accountType: String!, $name: String!, $userId: Int!, $parentAccount: Int!) {
+      __typename
+      createAccount(accountType: $accountType, name: $name, userId: $userId, parentAccount: $parentAccount) {
+        accountId
+      }
+    }
+  '''
+
+  CREATE_TRANSACTION = '''\
+    mutation AddIncome($amount: Float!, $accountId: Int!, $userId: Int!) {
+      addIncome(accountId: $accountId, amount: $amount, userId: $userId) {
+        id
+      }
+    }
+  '''
+
 
 class Queries(Enum):
   """
