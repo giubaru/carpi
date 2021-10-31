@@ -1,2 +1,42 @@
 # Carpi
-![Tests](https://github.com/giubaru/carpi/actions/workflows/test-and-coverage.yml/badge.svg)
+<p align="center">
+  <a href="https://github.com/giubaru/carpi/actions/workflows/test-and-coverage.yml?query=event%3Apush+branch%3Amain" target="_blank">
+      <img src="https://github.com/giubaru/carpi/actions/workflows/test-and-coverage.yml/badge.svg?event=push&branch=main" alt="Tests">
+  </a>
+</p>
+
+## Requirements
+- [Python 3.6+](https://www.python.org/downloads/)
+- [Poetry](https://python-poetry.org/docs/#installation)
+
+## Troubleshooting
+- To use Make in Windows, you need to install it using chocolatey. [See this guide](https://docs.microsoft.com/en-us/windows/wsl/install-win32-chocolatey) for more information.
+  - `choco install make` (Run as Administrator)
+
+## Getting started
+To get started, clone the repository and run:
+```console
+$ poetry install
+
+---> Installing dependencies from lock file
+---> ...
+---> Installing the current project: carpi (0.1.0)
+
+$ poetry shell
+$ (carpi) make shell
+
+---> INFO:     Application startup complete.
+---> INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+```
+
+## Running tests
+```console
+$ poetry shell
+$ (carpi) make tests
+
+---> plugins: cov-2.12.1
+---> collected 5 items
+
+---> tests\test_app.py .....
+---> ========== 5 passed in 1.70s ==========
+```
