@@ -73,7 +73,7 @@ class Mutation:
       session.commit()
       session.refresh(user)
     
-    return CreateUserSuccess(message="User created successfully", user_id=user.id)
+    return CreateUserSuccess(user_id=user.id)
 
 
   @strawberry.mutation

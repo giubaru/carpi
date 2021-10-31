@@ -5,7 +5,7 @@ from sqlmodel import Session, SQLModel, create_engine, select
 from sqlmodel.pool import StaticPool
 
 from ..main import app, db, models
-
+from .consts import Mutations, Queries
 from logging import Logger
 
 logger = Logger(__name__)
@@ -28,48 +28,44 @@ def client_fixture(session: Session):
   yield client
   # remove db to avoid persistent data
 
-def test_create_user(client: TestClient):
-  mutation = '''
-    mutation {
-      createUser(email: "testuser@test.com", name: "TestUser", username: "testuser"){
-        name
-        username
-      }
-    }
-  '''
-  
-  result = client.post('/graphql', json={'query': mutation})
-
-  assert result.json() == {'data': {'createUser': {'name': 'TestUser', 'username': 'testuser'}}}
-
-def test_create_user_incomplete(client: TestClient):
-  mutation = '''
-    mutation {
-      createUser(email: "testuser@test.com", name: "TestUser"){
-        name
-        username
-      }
-    }
-  '''
-  
-  result = client.post('/graphql', json={'query': mutation})
-
-  assert result.json() == {'data': None, 'errors': [{'locations': [{'column': 7, 'line': 3}], 'message': "Field 'createUser' argument 'username' of type 'String!' is required, but it was not provided.", 'path': None}]}
-
-def test_get_user(client: TestClient, session: Session):
-  query = '''
-  query GetUser($userId: Int!) {
-    user(userId: $userId) {
-      id
-      name
-      email
-      username
-    }
-  }
-  '''
+def test_create_user(client: TestClient, session: Session):
+  result = client.post('/graphql', json={
+    'query': Mutations.CREATE_USER.value, 
+    'variables': {"username": "testuser", "email": "testuser@test.com", "name": "Test"}}
+  )
 
   user: models.User = session.exec(select(models.User).where(models.User.username == "testuser")).first()
+
+  assert result.json() == {'data': {'createUser': {'__typename': 'CreateUserSuccess', 'userId': user.id}}}
+
+def test_create_user_with_existent_username(client: TestClient):
+  result = client.post('/graphql', json={
+    'query': Mutations.CREATE_USER.value, 
+    'variables': {"username": "testuser", "email": "new_testuser@test.com", "name": "Test"}}
+  )
+
+  assert result.json() == {'data': {'createUser': {'__typename': 'UsernameAlreadyExistsError', 'username': "testuser", "alternativeUsername": "new_username_alternative"}}}
+
+def test_create_user_with_existent_username(client: TestClient):
+  result = client.post('/graphql', json={
+    'query': Mutations.CREATE_USER.value, 
+    'variables': {"username": "new_testuser", "email": "testuser@test.com", "name": "Test"}}
+  )
+
+  assert result.json() == {'data': {'createUser': {'__typename': 'EmailAlreadyInUseError', 'email': "testuser@test.com"}}}
+
+
+def test_create_user_incomplete(client: TestClient):
+  result = client.post('/graphql', json={
+    'query': Mutations.CREATE_USER_INCOMPLETE.value, 
+    'variables': {"email": "testuser@test.com", "name": "Test"}}
+  )
+
+  assert result.json().get("errors")[0].get("message") == "Field 'createUser' argument 'username' of type 'String!' is required, but it was not provided."
+
+def test_get_user(client: TestClient, session: Session):
+  user: models.User = session.exec(select(models.User).where(models.User.username == "testuser")).first()
   
-  result = client.post('/graphql', json={'query': query, "variables": {"userId": user.id}})
+  result = client.post('/graphql', json={'query': Queries.GET_USER.value, "variables": {"userId": user.id}})
   
-  assert result.json() == {"data": {"user": {"id": user.id, "name": "TestUser", "email": "testuser@test.com", "username": "testuser" }}}
+  assert result.json() == {"data": {"user": {"id": user.id, "name": "Test", "email": "testuser@test.com", "username": "testuser" }}}
