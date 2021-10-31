@@ -94,7 +94,7 @@ class Mutation:
 
       if parent_account:
         parent = session.get(models.Account, parent_account)
-        parent.children.append(account)
+        parent.append(account)
         session.add(parent)
         # session.refresh(parent)
 

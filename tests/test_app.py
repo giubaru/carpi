@@ -112,7 +112,25 @@ def test_add_child_account(client: TestClient, session: Session):
   assert account.user_id == user.id
   assert account.name == "Salarios"
   assert account.account_type == "I"
-  assert account.parents[0].id == 1
+  assert account.parent_id == 1
+
+def test_add_grandson_account(client: TestClient, session: Session):
+  '''This test creates an account and then adds a child account to it'''
+
+  user: models.User = session.exec(select(models.User).where(models.User.username == "testuser")).first()
+
+  result = client.post('/graphql', json={
+    'query': Mutations.CREATE_CHILD_ACCOUNT.value, 
+    'variables': {"accountType": "I", "name": "Trabajo 1", "userId": user.id, "parentAccount": 2}}
+  )
+
+  account_id = result.json().get("data").get("createAccount").get("accountId")
+  account: models.Account = session.get(models.Account, account_id)
+  
+  assert account.user_id == user.id
+  assert account.name == "Trabajo 1"
+  assert account.account_type == "I"
+  assert account.parent_id == 2
 
 def test_add_new_income(client: TestClient, session: Session):
   '''This test adds a new income to an existent account'''
@@ -121,10 +139,10 @@ def test_add_new_income(client: TestClient, session: Session):
   
   result = client.post('/graphql', json={
     'query': Mutations.CREATE_TRANSACTION.value, 
-    'variables': {"accountId": 2, "amount": 100, "userId": 1}
+    'variables': {"accountId": 3, "amount": 100, "userId": 1}
   })
 
-  account: models.Account = session.get(models.Account, 2)
+  account: models.Account = session.get(models.Account, 3)
 
   income = result.json().get("data").get("addIncome").get("id")
   

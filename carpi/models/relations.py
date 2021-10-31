@@ -9,11 +9,11 @@ from .user import UserRead
 from .account import AccountRead
 from .. import db, crud
 
-@strawberry.experimental.pydantic.type(model=AccountRead, fields=["id","children","transactions","user_id","total","name","account_type"])
+@strawberry.experimental.pydantic.type(model=AccountRead, fields=["id","children","transactions","parent_id","user_id","total","name","account_type"])
 class AccountReadGraph:
   children: List[strawberry.LazyType["AccountReadGraph", __module__]] = field(default_factory=list)
   transactions: List[strawberry.LazyType["TransactionReadGraph", __module__]] = field(default_factory=list)
-
+  parent_id: Optional[int] = field(default=None)
 @strawberry.experimental.pydantic.type(model=TransactionRead, fields=["user_id", "account_id", "movement", "account_id", "amount", "category", "id", "user", "accounts"])
 class TransactionReadGraph:
   pass
