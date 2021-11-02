@@ -54,10 +54,18 @@ class Mutations(Enum):
     }
   '''
 
-  CREATE_TRANSACTION = '''\
+  CREATE_NEW_INCOME = '''\
     mutation AddIncome($amount: Float!, $accountId: Int!, $userId: Int!) {
       newIncome(accountId: $accountId, amount: $amount, userId: $userId) {
-        id
+        accountId
+      }
+    }
+  '''
+
+  CREATE_NEW_WITHDRAW = '''\
+    mutation newWithdraw($amount: Float!, $accountId: Int!, $userId: Int!) {
+      newWithdraw(accountId: $accountId, amount: $amount, userId: $userId) {
+        accountId
       }
     }
   '''

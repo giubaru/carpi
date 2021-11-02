@@ -38,6 +38,7 @@ class Account(AccountBase, table=True):
   id: Optional[int] = Field(default=None, primary_key=True)
   user: Optional["User"] = Relationship(back_populates="accounts")
   parent_id: Optional[int] = Field(default=None, foreign_key="accounts.id")
+  # parent: Optional["Account"] = None
   children: List["Account"] = Relationship(
     sa_relationship_kwargs=dict(
       cascade="all",
@@ -49,29 +50,42 @@ class Account(AccountBase, table=True):
   def append(self, child: "Account"):
     self.children.append(child)
 
-  def income(self, amount: float) -> "Transaction":
-    transaction = Transaction(
-      amount=amount,
-      user_id=self.user_id,
-      movement='I',
-      category='Ganancia',
-      account_id=self.id,
-      id=str(uuid4())
-    )
-    self.transactions.append(transaction)
-    return transaction
+  def income(self, amount: float, origin: bool = True) -> "Transaction":
+    if origin:
+      transaction = Transaction(
+        amount=amount,
+        user_id=self.user_id,
+        movement='I',
+        category='Ganancia',
+        account_id=self.id,
+        id=str(uuid4())
+      )
+      self.transactions.append(transaction)
 
-  def withdraw(self, amount: float, ) -> "Transaction":
-    transaction = Transaction(
-      amount=amount,
-      user_id=self.user_id,
-      movement='E',
-      category='Perdida',
-      account_id=self.id,
-      id=str(uuid4())
-    )
-    self.transactions.append(transaction)
-    return transaction
+    self.total += amount
+    
+    if self.parent:
+      self.parent.income(amount, origin=False)
+
+  def withdraw(self, amount: float, origin: bool = True) -> "Transaction":
+    if origin:
+      transaction = Transaction(
+        amount=amount,
+        user_id=self.user_id,
+        movement='E',
+        category='Perdida',
+        account_id=self.id,
+        id=str(uuid4())
+      )
+      self.transactions.append(transaction)
+    
+    if amount > self.total: 
+      raise Exception("Amount greater than available")
+
+    self.total -= amount
+
+    if self.parent:
+      self.parent.withdraw(amount, origin=False)
 
   def transfer(self, amount: float, destination: "Account"):
     self.withdraw(amount)

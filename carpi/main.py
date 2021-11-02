@@ -33,19 +33,20 @@ class CreateAccountSuccess:
   account_id: int
 
 @strawberry.type
+class NewIncomeSuccess:
+  account_id: int
+
+@strawberry.type
 class Mutation:
   @strawberry.mutation
-  def new_income(self, amount: float, account_id: int, user_id: int) -> models.TransactionReadGraph:
+  def new_income(self, amount: float, account_id: int, user_id: int) -> NewIncomeSuccess:
     with db.Session(db.engine) as session:
       account: models.Account = session.exec(select(models.Account).where(models.Account.id == account_id, models.Account.user_id == user_id)).one()
-      transaction = account.income(amount)
+      account.income(amount)
       session.add(account)
       session.commit()
-      data = models.TransactionReadGraph.from_pydantic(transaction)
-
-      crud.update_total(account_id, amount, transaction.movement)
-      
-    return data
+    
+    return NewIncomeSuccess(account_id=account_id)
   
   @strawberry.mutation
   def new_withdraw(self, amount: float, account_id: int, user_id: int) -> models.TransactionReadGraph:

@@ -138,7 +138,7 @@ def test_add_new_income(client: TestClient, session: Session):
   user: models.User = session.exec(select(models.User).where(models.User.username == "testuser")).first()
   
   result = client.post('/graphql', json={
-    'query': Mutations.CREATE_TRANSACTION.value, 
+    'query': Mutations.CREATE_NEW_INCOME.value, 
     'variables': {"accountId": 3, "amount": 100, "userId": 1}
   })
 
@@ -147,6 +147,35 @@ def test_add_new_income(client: TestClient, session: Session):
   income = result.json().get("data").get("newIncome").get("id")
   
   assert account.total == 100
-  # assert income.amount == 100
-  # assert income.date == "2020-01-01"
-  # assert income.description == "Salario"
+
+def test_new_withdraw(client: TestClient, session: Session):
+  '''This test adds a new income to an existent account'''
+
+  user: models.User = session.exec(select(models.User).where(models.User.username == "testuser")).first()
+  
+  result = client.post('/graphql', json={
+    'query': Mutations.CREATE_NEW_WITHDRAW.value, 
+    'variables': {"accountId": 3, "amount": 50, "userId": 1}
+  })
+
+  account: models.Account = session.get(models.Account, 3)
+
+  # income = result.json().get("data").get("newWithdraw").get("id")
+  
+  assert account.total == 50
+
+def test_new_withdraw_amount_grater_than_available(client: TestClient, session: Session):
+  '''This test adds a new income to an existent account'''
+
+  user: models.User = session.exec(select(models.User).where(models.User.username == "testuser")).first()
+  
+  result = client.post('/graphql', json={
+    'query': Mutations.CREATE_NEW_WITHDRAW.value, 
+    'variables': {"accountId": 3, "amount": 300, "userId": 1}
+  })
+
+  account: models.Account = session.get(models.Account, 3)
+
+  income = result.json().get("errors")[0].get("message")
+  
+  assert income == "Amount greater than available"
