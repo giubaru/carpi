@@ -6,10 +6,12 @@ from sqlmodel import SQLModel, Field, Column, DateTime, Relationship
 from datetime import datetime
 
 from sqlalchemy.orm import backref
+from uuid import uuid4
 
+
+from .new_transaction import Transaction
 if TYPE_CHECKING:
     from .user import User, UserRead
-    from .new_transaction import Transaction
 
 class AccountBase(SQLModel):
   user_id: Optional[int] = Field(default=None, foreign_key="user.id")
@@ -47,6 +49,33 @@ class Account(AccountBase, table=True):
   def append(self, child: "Account"):
     self.children.append(child)
 
+  def income(self, amount: float) -> "Transaction":
+    transaction = Transaction(
+      amount=amount,
+      user_id=self.user_id,
+      movement='I',
+      category='Ganancia',
+      account_id=self.id,
+      id=str(uuid4())
+    )
+    self.transactions.append(transaction)
+    return transaction
+
+  def withdraw(self, amount: float, ) -> "Transaction":
+    transaction = Transaction(
+      amount=amount,
+      user_id=self.user_id,
+      movement='E',
+      category='Perdida',
+      account_id=self.id,
+      id=str(uuid4())
+    )
+    self.transactions.append(transaction)
+    return transaction
+
+  def transfer(self, amount: float, destination: "Account"):
+    self.withdraw(amount)
+    destination.income(amount)
 class AccountCreate(AccountBase):
   pass
 

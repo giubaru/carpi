@@ -56,7 +56,7 @@ class Mutations(Enum):
 
   CREATE_TRANSACTION = '''\
     mutation AddIncome($amount: Float!, $accountId: Int!, $userId: Int!) {
-      addIncome(accountId: $accountId, amount: $amount, userId: $userId) {
+      newIncome(accountId: $accountId, amount: $amount, userId: $userId) {
         id
       }
     }

@@ -1,9 +1,9 @@
 from typing import List, Optional
 from sqlmodel import select
 from sqlmodel.orm.session import Session
-from sqlalchemy.orm import joinedload, subqueryload
+from sqlalchemy.orm import joinedload, subqueryload, lazyload
 from . import db, models
-from .models.account import Account, AccountRead
+
 
 
 def get_transactions() -> List[models.TransactionRead]:
@@ -41,26 +41,34 @@ def get_user_by_email(email: str) -> models.UserRead:
 
 def get_accounts_by_user_id(user_id: int) -> List[models.AccountRead]:
   with db.Session(db.engine) as session:
-    accounts = session.exec(select(models.Account).options(subqueryload(Account.children)).where(models.Account.user_id == user_id)).all()
+    statement = select(models.Account).where(models.Account.user_id == user_id)
+    statement.options(subqueryload(models.Account.transactions))
+    accounts = session.exec(statement).all()
     return accounts
 
-def update_total(account_id: int, amount: float):
+def update_total(account_id: int, amount: float, movement: str):
   with db.Session(db.engine) as session:
     account = session.get(models.Account, account_id)
-    account.total += amount
+
+    if movement == 'I':
+      account.total += amount
+    elif movement == 'E':
+      account.total -= amount
+
     session.add(account)
     session.commit()
 
     if account.parent_id:
-      update_total(account.parent_id, amount)
+      update_total(account.parent_id, amount, movement)
 
-def get_accounts(session: Session, account_id: Optional[int] = None, user_id: Optional[int] = None) -> List[AccountRead]:
-  statement = select(Account).options(subqueryload(Account.children))
+def get_accounts(session: Session, account_id: Optional[int] = None, user_id: Optional[int] = None) -> List[models.AccountRead]:
+  statement = select(models.Account)
 
   if account_id:
-    statement = statement.where(Account.user_id == user_id, Account.id == account_id)
+    statement = statement.where(models.Account.user_id == user_id, models.Account.id == account_id)
   elif user_id:
-    statement = statement.where(Account.user_id == user_id)
+    statement = statement.where(models.Account.user_id == user_id)
   
+  statement.options(subqueryload(models.Account.transactions))
   accounts = session.exec(statement).all()
   return accounts

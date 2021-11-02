@@ -144,7 +144,7 @@ def test_add_new_income(client: TestClient, session: Session):
 
   account: models.Account = session.get(models.Account, 3)
 
-  income = result.json().get("data").get("addIncome").get("id")
+  income = result.json().get("data").get("newIncome").get("id")
   
   assert account.total == 100
   # assert income.amount == 100

@@ -6,7 +6,7 @@ from uuid import uuid4
 from strawberry.asgi import GraphQL
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from sqlmodel import select
 from carpi import db, models, crud
 
 @strawberry.type
@@ -35,21 +35,28 @@ class CreateAccountSuccess:
 @strawberry.type
 class Mutation:
   @strawberry.mutation
-  def add_income(self, amount: float, user_id: int, account_id: int) -> models.TransactionReadGraph:
+  def new_income(self, amount: float, account_id: int, user_id: int) -> models.TransactionReadGraph:
     with db.Session(db.engine) as session:
-      trans1 = models.Transaction(
-          amount=amount,
-          user_id=user_id,
-          movement='I',
-          category='Ganancia',
-          account_id=account_id,
-          id=str(uuid4())
-      )
-      session.add(trans1)
+      account: models.Account = session.exec(select(models.Account).where(models.Account.id == account_id, models.Account.user_id == user_id)).one()
+      transaction = account.income(amount)
+      session.add(account)
       session.commit()
-      data = models.TransactionReadGraph.from_pydantic(trans1)
+      data = models.TransactionReadGraph.from_pydantic(transaction)
 
-      crud.update_total(account_id, amount)
+      crud.update_total(account_id, amount, transaction.movement)
+      
+    return data
+  
+  @strawberry.mutation
+  def new_withdraw(self, amount: float, account_id: int, user_id: int) -> models.TransactionReadGraph:
+    with db.Session(db.engine) as session:
+      account: models.Account = session.exec(select(models.Account).where(models.Account.id == account_id, models.Account.user_id == user_id)).one()
+      transaction = account.withdraw(amount)
+      session.add(account)
+      session.commit()
+      data = models.TransactionReadGraph.from_pydantic(transaction)
+
+      crud.update_total(account_id, amount, transaction.movement)
       
     return data
 

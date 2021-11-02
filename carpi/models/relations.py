@@ -4,11 +4,11 @@ from typing import Optional, List
 
 from strawberry.field import field
 
-from .new_transaction import TransactionRead
+from .new_transaction import TransactionRead, Transaction
 from .user import UserRead
 from .account import AccountRead
 from .. import db, crud
-
+from sqlmodel import select
 @strawberry.experimental.pydantic.type(model=AccountRead, fields=["id","children","transactions","parent_id","user_id","total","name","account_type"])
 class AccountReadGraph:
   children: List[strawberry.LazyType["AccountReadGraph", __module__]] = field(default_factory=list)
@@ -24,15 +24,9 @@ class UserReadGraph:
   # transactions: List["TransactionReadGraph"] = None
   @strawberry.field
   def accounts(self, account_id: Optional[int] = None) -> List[AccountReadGraph]:
-    with db.Session(db.engine) as session: # Using session to avoid Parent Lazy bounce
-      childrens = []
-      def get_children(children, childrens):
-        if len(children) == 0:
-          return childrens
-        for child in children:
-          childrens.append(child)
-          get_children(child.children, childrens)
-
+    
+    with db.Session(db.engine) as session: # Using session to avoid Parent Lazy bound error
+      
       if account_id:
         results = crud.get_accounts(session, account_id=account_id, user_id=self.id)
       else:
