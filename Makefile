@@ -7,7 +7,7 @@ test-win:
 	rmdir /s /q "tests\__pycache__"
 	rmdir /s /q ".pytest_cache"
 
-test:
+tests:
 	pytest tests
 	rm $(TEST_DATABASE)
 	rm -rf "tests\__pycache__"
